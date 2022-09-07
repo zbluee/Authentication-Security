@@ -1,7 +1,6 @@
 import {} from 'dotenv/config';
 import mongoose from 'mongoose';
 
-
 const password = encodeURIComponent(process.env.DB_PASSWORD);
 const url = `mongodb+srv://admin-blue:${password}@cluster0.il2bjzs.mongodb.net/userDB?retryWrites=true&w=majority`;
 try{
@@ -12,6 +11,7 @@ try{
 }catch(e){
     console.log('Failed');
 }
+
 
 const userSchema = new mongoose.Schema({
     email : String,

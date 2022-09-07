@@ -6,7 +6,7 @@ import {User} from './db.js';
 import {validationResult} from 'express-validator';
 import {registrationSchema} from './schema/register-schema.js';
 import { loginSchema } from './schema/login-schema.js';
-import md5 from 'md5';
+import bcrypt from 'bcryptjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,14 +41,20 @@ exp.post(
         res.render('register', {alerts : alerts});
     }
     else{
-        const newUser = new User({
-            email : req.body.username,
-            password : md5(req.body.password)
-        });
-        newUser.save((err)=>{
-            return !err ? res.render('success') : console.log(err);
-        });
-    }
+        bcrypt.hash(req.body.password, 10, (err, hash)=>{
+            if(!err){
+                const newUser = new User({
+                    email : req.body.username,
+                    password : hash
+                });
+                newUser.save((err)=>{
+                    return !err ? res.render('success') : console.log(err);
+                });
+            }else{
+                console.log(err);
+            }
+        });           
+    }   
 });
 
 exp.post(
