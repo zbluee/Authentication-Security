@@ -5,7 +5,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import session from 'express-session';
 import passport from 'passport';
-import passportLocalMongoose from 'passport-local-mongoose';
 import {User} from './db.js';
 import {validationResult} from 'express-validator';
 import {registrationSchema} from './schema/register-schema.js';
@@ -34,6 +33,16 @@ exp.get('/', (req, res)=>{
     res.render('home');
 });
 
+exp.get('/auth/google', 
+    passport.authenticate('google', { scope : ['profile']})
+);
+
+exp.get('/auth/google/secrets',
+    passport.authenticate('google', {failureRedirect : '/login'}),
+    (req, res) => {
+        res.redirect('/secrets');
+});
+
 exp.get('/login', (req, res)=>{
     res.render('login');
 });
@@ -43,11 +52,12 @@ exp.get('/register', (req, res)=>{
 });
 
 exp.get('/secrets', (req, res)=>{
-    if(req.isAuthenticated()){
-        res.render('secrets');
-    }else{
-        res.render('login', {alerts : [{msg : 'You must log in first'}]});
-    }
+ 
+    User.find({'secret' : {$ne : null}},(err, foundUsers) => {
+        if(!err && foundUsers){
+            res.render('secrets', {secrets : foundUsers});
+        }
+    });
 });
 
 exp.get('/logout', (req, res) => {
@@ -58,7 +68,17 @@ exp.get('/logout', (req, res) => {
             console.log(err);
         }
     });
-})
+});
+
+exp.get('/submit', (req, res) => {
+    if(req.isAuthenticated()){
+        res.render('submit');
+    }else{
+        res.render('login', {alerts : [{msg : 'You must log in first'}]});
+    }
+
+});
+
 exp.post(
     '/register',
     registrationSchema,
@@ -99,6 +119,23 @@ exp.post(
         }
     });
    
+});
+
+exp.post('/submit', (req, res) => {
+
+    User.findById(req.user._id, (err, user) => {
+        if(!err && user){
+            user.secret = req.body.secret;
+            user.save((err) => {
+                if(!err){
+                    res.redirect('/secrets');
+
+                }
+            })
+        }else{
+            console.log(err);
+        }
+    })
 });
 
 exp.get('*', (req, res) => {
